@@ -1,4 +1,15 @@
 #!/usr/bin/env ruby
+require 'etc'
+require 'pp'
+
+def calc_proc_start_time(pid)
+    seconds_since_boot = File.read('/proc/uptime').split(/\s+/).first.to_f
+    proc_start_time = File.read("/proc/#{pid}/stat").chomp.split(/\s+/)[21].to_f
+    time_of_boot = Time.now - seconds_since_boot
+    clock_tick = 100
+    time_of_boot + (proc_start_time / clock_tick)
+
+end
 
 def get_tgid(pid)
     begin
@@ -48,9 +59,9 @@ def calc_shared_memory_rate(pid_list, _pid)
                 share += line.split[1].to_i if line.include?("Shared")
             }
             if _pid == pid
-                puts "\e[31m#{pid}: #{((share.to_f/rss)*100).round(2)}[%] (#{share}/#{rss}) #{cmd}\e[0m"
+                puts "\e[31m#{pid}: #{((share.to_f/rss)*100).round(2)}[%] (#{share}/#{rss}) #{calc_proc_start_time(pid)} #{cmd}\e[0m"
             else
-                puts "#{pid}: #{((share.to_f/rss)*100).round(2)}[%] (#{share}/#{rss}) #{cmd}"
+                puts "#{pid}: #{((share.to_f/rss)*100).round(2)}[%] (#{share}/#{rss}) #{calc_proc_start_time(pid)} #{cmd}"
             end
             rss = share = 0
         }
